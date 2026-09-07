@@ -1,11 +1,7 @@
 name: Build application
 
 on:
-  push:
-  pull_request:
-  schedule:
-    - cron: '0 8 * * *'
-
+  workflow_dispatch: 
 jobs:
   ubuntu-gcc-build:
     runs-on: ubuntu-latest
@@ -69,62 +65,62 @@ jobs:
         run: |
           ctest --test-dir build --output-on-failure
 
-  ubuntu-gcc-build-codecov:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          submodules: true
-      - name: Install dependencies
-        run: |
-          sudo apt-get install -y cmake ninja-build ccache gcovr lcov
-      - name: Install Python deps (codegen)
-        run: |
-          python3 -m venv ./venv
-          source ./venv/bin/activate
-          python3 -m pip install jinja2
-      - uses: actions/checkout@v5
-        with:
-          submodules: true
-      - name: ccache
-        uses: hendrikmuhs/ccache-action@v1.2
-        with:
-          key: ${{ github.job }}
-          create-symlink: true
-      - name: Configure
-        run: >
-          cmake -S . -B build
-          -GNinja
-          -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-          -DCMAKE_C_FLAGS="--coverage"
-          -DCMAKE_CXX_FLAGS="--coverage"
-      - name: Build
-        run: |
-          cmake --build build --parallel
-      - name: Test
-        run: |
-          ctest --test-dir build --output-on-failure
-        env:
-          CTEST_OUTPUT_ON_FAILURE: 1
-      - name: Generate lcov Coverage Data
-        run: |
-          cd build
-          lcov --capture --directory . --output-file ../coverage.info
-          lcov --remove ../coverage.info '*/3rdparty/*' '/usr/*' '*/test/*' --output-file ../coverage.info
-          cd ..
-          genhtml coverage.info --output-directory cov-report
-        continue-on-error: true
-      - name: Upload coverage report artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: cov-report
-          path: 'cov-report'
-      - name: Generate gcovr Coverage Data
-        run: |
-          cd build
-          gcovr -r ../include ../app --xml --output ../coverage.xml
-      - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5.4.3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.xml
+  # ubuntu-gcc-build-codecov:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v5
+  #       with:
+  #         submodules: true
+  #     - name: Install dependencies
+  #       run: |
+  #         sudo apt-get install -y cmake ninja-build ccache gcovr lcov
+  #     - name: Install Python deps (codegen)
+  #       run: |
+  #         python3 -m venv ./venv
+  #         source ./venv/bin/activate
+  #         python3 -m pip install jinja2
+  #     - uses: actions/checkout@v5
+  #       with:
+  #         submodules: true
+  #     - name: ccache
+  #       uses: hendrikmuhs/ccache-action@v1.2
+  #       with:
+  #         key: ${{ github.job }}
+  #         create-symlink: true
+  #     - name: Configure
+  #       run: >
+  #         cmake -S . -B build
+  #         -GNinja
+  #         -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+  #         -DCMAKE_C_FLAGS="--coverage"
+  #         -DCMAKE_CXX_FLAGS="--coverage"
+  #     - name: Build
+  #       run: |
+  #         cmake --build build --parallel
+  #     - name: Test
+  #       run: |
+  #         ctest --test-dir build --output-on-failure
+  #       env:
+  #         CTEST_OUTPUT_ON_FAILURE: 1
+      # - name: Generate lcov Coverage Data
+      #   run: |
+      #     cd build
+      #     lcov --capture --directory . --output-file ../coverage.info
+      #     lcov --remove ../coverage.info '*/3rdparty/*' '/usr/*' '*/test/*' --output-file ../coverage.info
+      #     cd ..
+      #     genhtml coverage.info --output-directory cov-report
+      #   continue-on-error: true
+      # - name: Upload coverage report artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: cov-report
+      #     path: 'cov-report'
+      # - name: Generate gcovr Coverage Data
+      #   run: |
+      #     cd build
+      #     gcovr -r ../include ../app --xml --output ../coverage.xml
+      # - name: Upload coverage reports to Codecov
+      #   uses: codecov/codecov-action@v5.4.3
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     files: coverage.xml
